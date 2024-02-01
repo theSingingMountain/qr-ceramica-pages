@@ -1,0 +1,391 @@
+/* Comments 
+    let htmlText = "<div><h1>"+names[i]+"</h1><br><h1>Scan this QR Code to Learn more</h1>"
+    let blob = new Blob([htmlText], { type: 'text/html'})
+    let dataUrl = await new Promise(r => {let a=new FileReader(); a.onload=r; a.readAsDataURL(blob)}).then(e => e.target.result);
+    var qrURI = qr.createDataURL(6)
+    let base64data1 = dataUrl.substr(dataUrl.indexOf(',')+1)
+    let base64data2 = qrURI.substr(qrURI.indexOf(',') + 1)
+    let concat = atob(base64data1)+atob(base64data2)
+    let base64merged = btoa(concat)
+    let imageURI = "data:image/png;base64,"+base64merged
+    downloadURI(imageURI, `${names[i]}.png`)
+*/
+
+/* Comments2
+
+    // let htmlElement = document.createElement("div")
+    // let title = document.createElement("h1")
+    // let desc = document.createElement("desc")
+    // let br = document.createElement("br")
+    // let text1 = document.createTextNode(names[i])
+    // let text2 = document.createTextNode("Scan this QR Code to learn more.")
+    // title.appendChild(text1)
+    // desc.appendChild(text2)       
+    // htmlElement.appendChild(br)
+    // htmlElement.appendChild(title)
+    // htmlElement.appendChild(br)
+    // htmlElement.appendChild(desc)
+*/
+
+Array.from(imgs).forEach(file=>{
+    const fileReader = new FileReader();
+    fileReader.readAsDataURL(file);
+    fileReader.onload = (fe) => {
+        count++;
+        const image = new Image();
+        image.src = fe.currentTarget.result;
+        image.onload = function(){
+            var dURL = image
+            const imgProps = pdf.getImageProperties(dURL)
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            pdf.addImage(dURL, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            if(count !== imgs.length )
+            pdf.addPage()
+            else if(count === imgs.length )
+            pdf.save('download.pdf', { returnPromise: true });
+        }
+    }
+})
+
+// Array.from(imgs).forEach(file=>{
+//     const fileReader = new FileReader();
+//     fileReader.readAsDataURL(file);
+//     fileReader.onload = async (fe) => {
+//         count++;
+//         const image = new Image();
+//         image.src = fe.currentTarget.result;
+//         await image.decode()
+//     }
+// })
+
+export async function action({ request }){
+    const formData = await request.formData();
+    const brand = formData.get("prod_brand");
+    const model = formData.get("prod_model");
+    const desc = formData.get("prod_desc");
+    const imgs = formData.getAll("prod_img");
+    const createdAt = new Date().toLocaleString().replace(',','');
+    const lastModified = new Date().toLocaleString().replace(',','');
+    var canvasElement = document.createElement("canvas")
+    const ctx = canvasElement.getContext("2d")
+    let pdf = new jsPDF('l', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageRatio = pageWidth / pageHeight;
+    var count = 0;
+    const imgPromises = imgs.map((file) => {
+        return new Promise((resolve, reject) => {
+            const fileReader = new FileReader();
+            fileReader.readAsDataURL(file);
+            fileReader.onload = async () => {
+                try {
+                    const image = new Image();
+                    image.src = fileReader.result;
+                    image.onload = async () => {
+                        var dURL = image
+                        const imgProps = pdf.getImageProperties(dURL)
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                        pdf.addPage("p", "mm", "a4")
+                        pdf.addImage(dURL, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                        resolve("200");
+                    }
+                }
+                catch(err) {
+                    reject(err)
+                }
+            }
+            fileReader.onerror = (error) => {
+                reject(error);
+            }
+
+        })
+    })
+    const imgPromisesConf = await Promise.all(imgPromises)
+    if(imgPromisesConf){
+        pdf.deletePage(1)
+        const blob = pdf.output('bloburi')
+        const convertedImg = new File([blob], "example.pdf")
+        try {
+            const addProductPromise = await addProduct(brand, model, desc, convertedImg, createdAt, lastModified)
+        }
+        catch(err){
+            return err.message;
+        }
+        finally{
+            return null;
+        }
+    }
+    return null;
+}
+
+export async function action({ request }){
+    const formData = await request.formData();
+    const brand = formData.get("prod_brand");
+    const model = formData.get("prod_model");
+    const desc = formData.get("prod_desc");
+    const imgs = formData.getAll("prod_img");
+    const createdAt = new Date().toLocaleString().replace(',','');
+    const lastModified = new Date().toLocaleString().replace(',','');
+    var canvasElement = document.createElement("canvas")
+    const ctx = canvasElement.getContext("2d")
+    let pdf = new jsPDF('l', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageRatio = pageWidth / pageHeight;
+    var count = 0;
+    // Array.from(imgs).forEach(file=>{
+    //     const fileReader = new FileReader();
+    //     fileReader.readAsDataURL(file);
+    //     fileReader.onload = async (fe) => {
+    //         count++;
+    //         const image = new Image();
+    //         image.src = fe.currentTarget.result;
+    //         await image.decode()
+    //     }
+    // })
+    const imgPromises = imgs.map((file, i) => {
+            const fileReader = new FileReader();
+            fileReader.readAsDataURL(file);
+            fileReader.onload = async () => {
+                try {
+                    const img = new Image();
+                    img.src = fileReader.result;
+                    img.onload = async () => {
+                        const imgWidth = img.width;
+                        const imgHeight = img.height;
+                        const imgRatio = imgWidth / imgHeight;
+                        if (i > 0) { pdf.addPage(); }
+                        pdf.setPage(i + 1);
+                        if (imgRatio >= 1) {
+                            const wc = imgWidth / pageWidth;
+                            if (imgRatio >= pageRatio) {
+                                pdf.addImage(img, 'JPEG', 0, (pageHeight - imgHeight / wc) / 2, pageWidth, imgHeight / wc, null, 'NONE');
+                            }
+                            else {
+                                const pi = pageRatio / imgRatio;
+                                pdf.addImage(img, 'JPEG', (pageWidth - pageWidth / pi) / 2, 0, pageWidth / pi, (imgHeight / pi) / wc, null, 'NONE');
+                            }
+                        }
+                        else {
+                            const wc = imgWidth / pageHeight;
+                            if (1 / imgRatio > pageRatio) {
+                                const ip = (1 / imgRatio) / pageRatio;
+                                const margin = (pageHeight - ((imgHeight / ip) / wc)) / 4;
+                                pdf.addImage(img, 'JPEG', (pageWidth - (imgHeight / ip) / wc) / 2, -(((imgHeight / ip) / wc) + margin), pageHeight / ip, (imgHeight / ip) / wc, null, 'NONE', -90);
+                            }
+                            else {
+            
+                                pdf.addImage(img, 'JPEG', (pageWidth - imgHeight / wc) / 2, -(imgHeight / wc), pageHeight, imgHeight / wc, null, 'NONE', -90);
+                            }
+                        }
+                        if (i == imgs.length- 1) {
+                            pdf.save('Photo.pdf');
+                        }
+                    }
+                }
+                catch(err) {
+                    reject(err)
+                }
+            }
+            fileReader.onerror = (error) => {
+                reject(error);
+            }
+    })
+    // const imgPromisesConf = await Promise.all(imgPromises)
+    // if(imgPromisesConf){
+    //     pdf.deletePage(1)
+    //     const blob = pdf.output('bloburi')
+    //     const convertedImg = new File([blob], "example.pdf")
+    //     try {
+    //         const addProductPromise = await addProduct(brand, model, desc, convertedImg, createdAt, lastModified)
+    //     }
+    //     catch(err){
+    //         return err.message;
+    //     }
+    //     finally{
+    //         return null;
+    //     }
+    // }
+    return null;
+}
+
+export async function action({ request }) {
+    const formData = await request.formData();
+    const brand = formData.get("prod_brand");
+    const model = formData.get("prod_model");
+    const desc = formData.get("prod_desc");
+    const imgs = formData.getAll("prod_img");
+    const createdAt = new Date().toLocaleString().replace(',', '');
+    const lastModified = new Date().toLocaleString().replace(',', '');
+    var count = 0;
+    // Array.from(imgs).forEach(file=>{
+    //     const fileReader = new FileReader();
+    //     fileReader.readAsDataURL(file);
+    //     fileReader.onload = async (fe) => {
+    //         count++;
+    //         const image = new Image();
+    //         image.src = fe.currentTarget.result;
+    //         await image.decode()
+    //     }
+    // })
+    function imageMerging(imgs){
+        var [img1, img1] = [...imgs]
+        var width, height
+        var imageArray = Array()
+        width = Math.max(cnv1.width, cnv2.width)
+        height = cnv1.height + cnv2.height
+        canvasArray.push({
+            src: cnv1, y: 0, x: 0
+        })
+        canvasArray.push({
+            src: cnv2, y: cnv1.height, x:0
+        })
+        const merging = mergeImages(canvasArray).then(b64 => {return b64;})
+        return merging
+    }
+    function verticalCanvases(base64Data) {
+        var [cnv1, cnv2] = [...base64Data]
+        var width, height
+        var canvasArray = Array()
+        var newCanvas = document.createElement('canvas'),
+        ctx = newCanvas.getContext('2d')
+        width = Math.max(cnv1.width, cnv2.width)
+        height = cnv1.height + cnv2.height
+        newCanvas.width = width
+        newCanvas.height = height
+        canvasArray.push({
+            src: cnv1, y: 0, x: 0
+        })
+        canvasArray.push({
+            src: cnv2, y: cnv1.height, x:0
+        })
+        canvasArray.forEach((n) => {
+            if(n.cnv.width !== width){
+                var ratio = width / height,
+                cnvWidth = width,
+                cnvHeight = n.cnv.height * ratio
+                ctx.beginPath()
+                ctx.drawImage(n.cnv, 0, n.y, cnvWidth, cnvHeight)
+            }
+            else {
+                ctx.beginPath()
+                ctx.drawImage(n.cnv, 0, n.y)
+            }
+        })
+        // let canvasArray = Array()
+        // if (cnv1) {
+        //     canvasArray.push({
+        //         cnv: cnv1,
+        //         y: 0
+        //     })
+        //     width = Math.max(cnv1.width, width)
+        //     height = height + cnv1.height
+        // }
+        // if (cnv2) {
+        //     canvasArray.push({
+        //         cnv: cnv2,
+        //         y: cnv1.height
+        //     })
+        //     width = Math.max(cnv2.width, width)
+        //     height = height + cnv2.height
+        // }
+        // if (cnv3) {
+        //     canvasArray.push({
+        //         cnv: cnv3,
+        //         y: cnv1.height + cnv2.height
+        //     })
+        //     width = Math.max(cnv3.width, width)
+        //     height = height + cnv3.height
+        // }
+        // if (cnv4) {
+        //     canvasArray.push({
+        //         cnv: cnv4,
+        //         y: cnv1.height + cnv2.height + cnv3.height
+        //     })
+        //     width = Math.max(cnv4.width, width)
+        //     height = height + cnv4.height
+        // }
+        // newCanvas.width = width;
+        // newCanvas.height = height;
+        // canvasArray.forEach(function (n) {
+        //     ctx.beginPath();
+        //     ctx.drawImage(n.cnv, 0, n.y, width, n.cnv.height);
+        // });
+        var imgdata = newCanvas.toDataURL();
+        return imgdata;
+    }
+    var base64Data = []
+    var cnv1, cnv2, cnv3, cnv4
+    const imgPromises = Array.from(imgs).map((file, index) => {
+        return new Promise((resolve, reject) => {
+            const fileReader = new FileReader();
+            var cnv = document.createElement('canvas')
+            fileReader.readAsDataURL(file);
+            fileReader.onload = async () => {
+                try {
+                    // const image = new Image();
+                    // image.onload = async () => {
+                    //     cnv.width = image.width
+                    //     cnv.height = image.height
+                    //     var context = cnv.getContext('2d')
+                    //     context.beginPath();
+                    //     context.drawImage(image, 0, 0)
+                    // }
+                    // image.src = fileReader.result;
+                    // base64Data.push(cnv)
+                    var x = document.createElement("img")
+                    x.setAttribute("src", fileReader.result)
+                    x.addEventListener("load", e => {
+                        var c = document.createElement("canvas"),
+                        ctx = c.getContext("2d")
+                        c.width = x.width
+                        c.height = x.height
+                        ctx.drawImage(x, 0, 0)
+                        resolve(ctx.canvas)
+                    })
+                }
+                catch(err) {
+                    reject(err)
+                }
+            }
+            fileReader.onerror = (error) => {
+                reject(error);
+            }
+        })
+    })
+    const imgPromisesConf = Promise.all(imgPromises).then((res) => {
+        base64Data = res
+        var merged = imageMerging(Array.from(imgs).map(file => file))
+        var dURL = verticalCanvases(base64Data);
+        // var doc = new jsPDF("p", "mm", "a4");
+
+        // var width = doc.internal.pageSize.getWidth();
+        // var height = doc.internal.pageSize.getHeight();
+
+        // doc.addImage(dURL, 'PNG', 0, 0, width, height);
+
+        // doc.save('sample.pdf');
+        // const blob = doc.output('bloburi')
+        // const convertedImg = new File([blob], "example.pdf")
+        // try {
+        //     const addProductPromise = await addProduct(brand, model, desc, convertedImg, createdAt, lastModified)
+        // }
+        // catch(err){
+        //     throw new Error(err.message)
+        // }
+        // finally{
+        //     return null;
+        // }
+    // var doc = new jsPDF("p", "mm", "a4");
+
+    // var width = doc.internal.pageSize.getWidth();
+    // var height = doc.internal.pageSize.getHeight();
+
+    // doc.addImage(dURL, 'PNG', 0, 0, width, height);
+
+    // doc.save('sample.pdf');
+    })
+    return null;
+}

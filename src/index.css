@@ -1,0 +1,157 @@
+html, body {
+    overflow: hidden;
+}
+
+/* Signup Button */
+.signup--input {
+    padding: 12px !important;
+    align-items: flex-start !important;
+    gap: 186px !important;
+    width: 320px !important;
+}
+
+.login--input {
+    display: inline-flex;
+    padding: 12px;
+    align-items: flex-start;
+    gap: 186px;
+}
+
+/* Signup Page */
+.signup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    width: 360px;
+    align-items: center;
+    justify-content: center;
+}
+
+.signup--container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Unclickable */
+.disabled {
+    pointer-events: none;
+}
+
+.carousel-button-group {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+/* .hidden { */
+    /* visibility: hidden !important;
+    display: none !important; */
+/* } */
+/* .sidebar-nav {
+    height: 100%;
+    position: fixed;
+    overflow-y: hidden;
+} */
+
+
+@media only screen and (max-width: 768px){
+    .list--date, .list--desc {
+        display: none!important;
+    }
+}
+
+.react-multi-carousel-list {
+    max-width: inherit
+}
+
+.carousel-container {
+    max-width: 100%;
+}
+/* Underlining Text */
+.underline {
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: red;
+}
+.trim {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.image--container {
+    overflow: scroll!important;
+}
+
+.sidebar-column {
+    overflow: scroll;
+    max-height: calc(100vh - 40px)
+}
+.main-column {
+    overflow: scroll;
+    max-height: calc(100vh - 40px)
+}
+.main--content {
+    max-height: 100%;
+}
+
+.products--form {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    gap: 10px;
+    width: 450px;
+}
+
+.preview--container {
+    width: 500px;
+    height: 650px;
+}
+.images--preview {
+    width: 500px;
+    height: 600px;
+    overflow: scroll;
+    padding: 30px;
+}
+
+.submit--button {
+    height: 50px;
+    flex-shrink: 0;
+}
+
+.sidebar--cards {
+    overflow-y: scroll;
+    height:auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+.sidebar--cards::-webkit-scrollbar {
+    display: none;
+}
+
+/* Header Button */
+.header--button {
+	border: none;
+	padding: 0;
+    width: 0;
+}
+
+/* Login Button */
+.login-button {
+    color: rgb(104, 85, 224);
+    background-color: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(104, 85, 224, 1);
+    box-shadow: 0 0 20px rgba(104, 85, 224, 0.2);
+    transition: 0.4s;
+    width: 320px;
+}
+
+.login-button:hover {
+    color: white;
+    box-shadow: 0 0 20px rgba(104, 85, 224, 0.6);
+    background-color: rgba(104, 85, 224, 1);
+}
+  

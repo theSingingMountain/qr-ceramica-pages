@@ -1,0 +1,2 @@
+document.documentElement.style.setProperty('--nav-height', document.getElementById("navbar--height").offsetHeight);
+document.documentElement.style.setProperty('--searchbar-height', document.getElementById("searchbar").offsetHeight);
